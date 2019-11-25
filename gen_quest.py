@@ -3,9 +3,9 @@ import time
 import click
 from docx import Document
 
-OP_TABLE = ['+', '-', '×', '÷']
+OP_TABLE = ['+', '-', '×']
 
-def gen_question(qnum: int):
+def gen_question(qnum:int, with_answer:bool=False):
     """gen_question
 
     :param qnum: the count to questions
@@ -19,7 +19,14 @@ def gen_question(qnum: int):
             second = random.randint(first, 10) - first
         elif op == '-':
             second = random.randint(0, first)
-        yield '%2d %1s%2d =' % (first, op, second)
+        if with_answer:
+            answer = (first + second) if op == '+' else \
+                     (first - second) if op == '-' else \
+                     (first * second) if op == '×' else \
+                     0
+            yield '%2d %1s%2d = %2d' % (first, op, second, answer)
+        else:
+            yield '%2d %1s%2d =' % (first, op, second)
 
 class DocxExporter(object):
     """DocxExporter"""
@@ -94,24 +101,26 @@ EXPRORTERS = {
 }
 
 @click.command()
-@click.option('-c', '--columns', default=2, help='出题列数')
-@click.option('-q', '--questions', default=100, help='出题数量')
-@click.option('-e', '--export-format', default='plain', help='导出类型')
-@click.option('-f', '--export-name', default='quest', help='导出文件名')
-def gqcmd(columns, questions, export_format, export_name):
+@click.option('-q', '--questions', default=100, show_default=True, help='出题数量')
+@click.option('-c', '--columns', default=2, show_default=True, help='输出列数')
+@click.option('-e', '--export-format', default='plain', type=click.Choice(['plain', 'doc', 'docx']), show_default=True, help='导出类型')
+@click.option('-f', '--export-name', default='quest', show_default=True, help='导出文件名')
+@click.option('--with-answer/--without-answer', default=False, help='是否导出答案')
+def gqcmd(questions, columns, export_format, export_name, with_answer):
     """gqcmd the command entry to generate questions
 
     :param columns: the column count
     :param questions: the question count
     :param export_format: the export format
     :param export_name: the export file name
+    :param with_answer: answer the question or not
     """
     exporter = EXPRORTERS[export_format]()
     ehandle = exporter.open(export_name + '.' + export_format, columns=columns)
 
     # the row to hold questions in single row
     qrow = list()
-    for q in gen_question(questions):
+    for q in gen_question(questions, with_answer):
         qrow.append(q)
         # trigger the row dump whenever the it is *FULL*
         if len(qrow) >= columns:

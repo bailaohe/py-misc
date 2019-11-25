@@ -37,6 +37,8 @@ class DocxExporter(object):
         :param columns: the columns of exported docx file
         """
         doc = Document()
+        # set a normal monsopaced font
+        doc.styles['Normal'].font.name = u'Courier New'
         qtable = doc.add_table(rows=0, cols=columns)
         return (doc, qtable, path)
 
